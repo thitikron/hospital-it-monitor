@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Asset Monitor — โรงพยาบาลแม่แตง</title>
+    <style>
+        /* ก๊อปปี้ Style จากไฟล์ index.php เดิมของคุณมาวางที่นี่ทั้งหมดครับ */
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-brand">
+            <div class="logo">🏥</div>
+            <div>
+                <h1>โรงพยาบาลแม่แตง</h1>
+                <span>Cloud Asset Monitor System</span>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="live-dot">LIVE (Cloud)</div>
+            <button class="btn btn-primary" onclick="fetchSheetData()">↻ Refresh Data</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="stats-strip">
+            <div class="stat-card"><div class="stat-label">เครื่องทั้งหมด</div><div class="stat-value accent" id="stat-total">0</div></div>
+            <div class="stat-card"><div class="stat-label">Online</div><div class="stat-value green" id="stat-online">0</div></div>
+            <div class="stat-card"><div class="stat-label">Offline</div><div class="stat-value red" id="stat-offline">0</div></div>
+        </div>
+
+        <div class="table-wrap">
+            <table id="main-table">
+                <thead>
+                    <tr>
+                        <th>Hostname</th>
+                        <th>IP Address</th>
+                        <th>แผนก / Ward</th>
+                        <th>RAM Total</th>
+                        <th>CPU Name</th>
+                        <th>Last Update</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        // *** สำคัญ: วาง URL ที่ได้จาก Publish to web (แบบ .csv) ของ Google Sheet ที่นี่ ***
+        const SHEET_CSV_URL = 'ใส่_CSV_URL_ของคุณที่นี่';
+
+        async function fetchSheetData() {
+            try {
+                const response = await fetch(SHEET_CSV_URL);
+                const csvData = await response.text();
+                const rows = csvData.split('\n').map(row => row.split(',')).slice(1);
+
+                const tbody = document.getElementById('table-body');
+                tbody.innerHTML = '';
+                let onlineCount = 0;
+
+                rows.forEach(cols => {
+                    if (cols.length < 5) return;
+                    
+                    // ลบเครื่องหมายคำพูดออก
+                    const cleanCols = cols.map(c => c.replace(/"/g, ''));
+                    
+                    // เช็คสถานะ Online (10 นาทีล่าสุด)
+                    const lastSeen = new Date(cleanCols[11]);
+                    const isOnline = (new Date() - lastSeen) / 1000 / 60 <= 10;
+                    if (isOnline) onlineCount++;
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><b style="color:#fff">${cleanCols[0]}</b></td>
+                            <td><span class="mono">${cleanCols[1]}</span></td>
+                            <td><span class="chip chip-dept">${cleanCols[2]}</span></td>
+                            <td>${cleanCols[4]} GB</td>
+                            <td>${cleanCols[8]}</td>
+                            <td>${cleanCols[11]}</td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById('stat-total').textContent = rows.length;
+                document.getElementById('stat-online').textContent = onlineCount;
+                document.getElementById('stat-offline').textContent = rows.length - onlineCount;
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        fetchSheetData();
+        setInterval(fetchSheetData, 60000); // รีเฟรชทุก 1 นาที
+    </script>
+</body>
+</html>
