@@ -1,40 +1,84 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>IT Asset Monitor — รพ.แม่แตง</title>
+    <style>
+        :root { --bg: #0d1117; --card: #161b22; --blue: #58a6ff; --green: #3fb950; --border: #30363d; --text: #c9d1d9; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; font-size: 16px; }
+        .table-wrap { background: var(--card); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1400px; }
+        th, td { padding: 15px; border-bottom: 1px solid var(--border); text-align: left; }
+        .sn-code { color: var(--blue); font-family: monospace; font-weight: bold; }
+        .btn-refresh { background: #238636; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+        .chip { background: #21262d; padding: 4px 8px; border-radius: 12px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+    <h1>🏥 IT Asset Dashboard (Cloud)</h1>
+    <button class="btn-refresh" id="btn-refresh" onclick="fetchSheetData()">↻ รีเฟรชข้อมูล</button>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Hostname / IP</th>
+                <th>Mainboard (Brand/Model/SN)</th>
+                <th>CPU / Cores</th>
+                <th>RAM Size/Type</th>
+                <th>Monitor(s) / SN</th>
+                <th>Last Update</th>
+            </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+    </table>
+</div>
+
 <script>
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQm0MhAuvfAWym8vr8FAI-n0WXwfQnfc4xibIXTadPj92y__oCNIelMQL8O65YNHOh2NfWSoM2wQ3E/pub?gid=0&single=true&output=csv';
+
     async function fetchSheetData() {
-        const res = await fetch(`${SHEET_CSV_URL}&cachebuster=${new Date().getTime()}`);
-        const csv = await res.text();
-        const rows = csv.split('\n').map(r => r.split(',')).slice(1);
-        const tbody = document.getElementById('table-body');
-        tbody.innerHTML = '';
+        const btn = document.getElementById('btn-refresh');
+        btn.innerText = 'กำลังโหลด...';
+        try {
+            // เพิ่ม Cache Buster เพื่อให้ข้อมูลรีเฟรชจริง
+            const res = await fetch(`${SHEET_CSV_URL}&t=${new Date().getTime()}`);
+            const csv = await res.text();
+            const rows = csv.split('\n').map(r => r.split(',')).slice(1);
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
 
-        rows.forEach(row => {
-            if (row.length < 15) return;
-            const c = row.map(v => v.replace(/"/g, '').trim());
-            
-            // ลำดับใหม่: 0:Host, 1:IP, 4:Brand, 5:Model, 6:MB_SN, 7:CPU, 8:Cores, 9:RAM_S, 10:RAM_T, 13-17:Monitors, 20:Update
-            let monitorHtml = "";
-            for(let i=13; i<=17; i++) {
-                if(c[i] && c[i] !== "" && c[i] !== "0 GB") monitorHtml += `<div class="monitor-item">🖥️ ${c[i]}</div>`;
-            }
+            rows.forEach(row => {
+                if (row.length < 15) return;
+                const c = row.map(v => v.replace(/"/g, '').trim());
 
-            tbody.innerHTML += `
-                <tr>
-                    <td>
-                        <span class="hostname" style="font-size: 18px;">${c[0]}</span>
-                        <span class="sub-info" style="color:var(--blue); font-weight:bold;">${c[1] || 'N/A'}</span>
-                    </td>
-                    <td>
-                        <div style="color:#fff; font-weight:bold;">ยี่ห้อ: ${c[4]}</div>
-                        <div style="color:#fff;">รุ่น: ${c[5]}</div>
-                        <span class="sub-info" style="word-break: break-all;">SN: <span class="sn-code">${c[6]}</span></span>
-                    </td>
-                    <td>
-                        <div style="color:var(--blue); font-weight:bold;">${c[7]}</div>
-                        <div style="color:#fff; font-size:14px;">${c[8]}</div>
-                    </td>
-                    <td><span class="chip" style="font-size:16px;">${c[9]} ${c[10]}</span></td>
-                    <td>${monitorHtml || '- ไม่มีข้อมูลจอ -'}</td>
-                    <td style="font-size:13px; color:#8b949e">${c[20]}</td>
-                </tr>`;
-        });
+                // Monitor 1-5 อยู่ที่ index 13-17 หลังเพิ่ม MB Model
+                let monitorHtml = "";
+                for(let i=13; i<=17; i++) {
+                    if(c[i] && c[i] !== "" && c[i] !== "0 GB") monitorHtml += `<div>🖥️ ${c[i]}</div>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${c[0]}</b><br><small style="color:var(--blue)">${c[1] || 'No IP'}</small></td>
+                        <td>
+                            <div>ยี่ห้อ: ${c[4]}</div>
+                            <div>รุ่น: ${c[5]}</div>
+                            <small class="sn-code">SN: ${c[6]}</small>
+                        </td>
+                        <td><b>${c[7]}</b><br><small>${c[8]}</small></td>
+                        <td><span class="chip">${c[9]} ${c[10]}</span></td>
+                        <td>${monitorHtml || '-'}</td>
+                        <td style="font-size:12px;">${c[20]}</td>
+                    </tr>`;
+            });
+        } catch (e) { console.error(e); }
+        btn.innerText = '↻ รีเฟรชข้อมูล';
     }
+    fetchSheetData();
 </script>
+</body>
+</html>
