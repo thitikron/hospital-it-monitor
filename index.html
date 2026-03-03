@@ -11,27 +11,27 @@
         .stats-grid { display: flex; gap: 20px; margin-bottom: 25px; }
         .stat-card { background: var(--card); padding: 20px; border-radius: 8px; border: 1px solid var(--border); flex: 1; }
         .stat-label { color: #8b949e; font-size: 14px; font-weight: 600; text-transform: uppercase; }
-        .stat-value { font-size: 36px; font-weight: bold; margin-top: 8px; }
+        .stat-value { font-size: 38px; font-weight: bold; margin-top: 8px; }
         .table-wrap { background: var(--card); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 1400px; }
-        th { background: #161b22; padding: 15px; font-size: 13px; color: #8b949e; border-bottom: 2px solid var(--border); text-transform: uppercase; }
-        td { padding: 15px; border-top: 1px solid var(--border); font-size: 15px; vertical-align: top; }
-        .hostname { font-weight: 600; color: #fff; font-size: 16px; }
-        .sub-info { font-size: 13px; color: #8b949e; display: block; margin-top: 4px; }
-        .sn-code { color: var(--blue); font-family: monospace; font-weight: bold; font-size: 14px; }
-        .monitor-item { font-size: 14px; margin-bottom: 6px; color: #fff; line-height: 1.5; }
-        .chip { background: #21262d; border: 1px solid var(--border); padding: 4px 10px; border-radius: 12px; font-size: 13px; color: #fff; }
-        .btn-refresh { background: #238636; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-        .wmi-icon { width: 20px; height: 20px; margin-right: 10px; vertical-align: middle; opacity: 0.8; }
+        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 1450px; }
+        th { background: #1c212b; padding: 18px; font-size: 14px; color: #8b949e; border-bottom: 2px solid var(--border); text-transform: uppercase; }
+        td { padding: 18px; border-top: 1px solid var(--border); font-size: 16px; vertical-align: top; }
+        .hostname { font-weight: 600; color: #fff; font-size: 17px; }
+        .sub-info { font-size: 14px; color: #8b949e; display: block; margin-top: 5px; }
+        .sn-code { color: var(--blue); font-family: monospace; font-weight: bold; font-size: 15px; }
+        .monitor-item { font-size: 14px; margin-bottom: 8px; color: #fff; line-height: 1.5; display: flex; align-items: center; }
+        .chip { background: #21262d; border: 1px solid var(--border); padding: 5px 12px; border-radius: 15px; font-size: 14px; color: #fff; font-weight: bold; }
+        .btn-refresh { background: #238636; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 16px; }
+        .status-dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 10px; }
+        .wmi-icon { width: 22px; height: 22px; margin-right: 10px; vertical-align: middle; fill: #8b949e; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <div>
-        <h1 style="margin:0; color:var(--blue); font-size: 26px;">🏥 โรงพยาบาลแม่แตง | Cloud Monitor</h1>
-        <small style="color:#8b949e; font-size: 15px;">IT Asset Management System (WMI Based)</small>
+        <h1 style="margin:0; color:var(--blue); font-size: 28px;">🏥 โรงพยาบาลแม่แตง | Cloud Monitor</h1>
+        <small style="color:#8b949e; font-size: 16px;">IT Asset Management (WMI Technology)</small>
     </div>
     <button class="btn-refresh" onclick="fetchSheetData()">↻ รีเฟรชข้อมูล</button>
 </div>
@@ -51,16 +51,16 @@
     <table>
         <thead>
             <tr>
-                <th><svg class="wmi-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 110 16A8 8 0 018 0zm0 14.5a6.5 6.5 0 100-13 6.5 6.5 0 000 13zM6 6.5a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm1 0a.5.5 0 101 0 .5.5 0 00-1 0zM6.5 10a2.5 2.5 0 113.522 2.222 1 1 0 01-.222.11 1.01 1.01 0 01-1 0 1 1 0 01-.222-.11A2.5 2.5 0 016.5 10z"></path></svg> HOSTNAME / IP</th>
-                <th><svg class="wmi-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M11 1H5v3h6V1zm-1 2H6V2h4v1zm2-1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V2h9zM2 9h12v1H2V9zm0 2h12v1H2v-1zM2 13h12v1H2v-1z"></path></svg> MAINBOARD & SERIAL</th>
-                <th><svg class="wmi-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M4 1a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V2a1 1 0 00-1-1H4zm0 1h8v12H4V2zM6 4h4v1H6V4zm0 2h4v1H6V6zm0 2h4v1H6V8z"></path></svg> CPU / CORES</th>
-                <th><svg class="wmi-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M3 1a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V2a1 1 0 00-1-1H3zm0 1h10v12H3V2zM5 3h6v2H5V3zm0 3h6v2H5V6zm0 3h6v2H5V9zm0 3h6v1H5v-1z"></path></svg> RAM (SIZE/TYPE)</th>
-                <th><svg class="wmi-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V3a2 2 0 00-2-2H2zm0 1h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V3a1 1 0 011-1zm6 11h2v1H8v-1z"></path></svg> MONITOR(S) / SN</th>
-                <th><svg class="wmi-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 110 16A8 8 0 018 0zm0 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zm0 3a.5.5 0 01.5.5V8h2a.5.5 0 010 1h-2.5a.5.5 0 01-.5-.5V5a.5.5 0 01.5-.5z"></path></svg> LAST UPDATE</th>
+                <th><svg class="wmi-icon" viewBox="0 0 16 16"><path d="M8 0a8 8 0 110 16A8 8 0 018 0zm0 14.5a6.5 6.5 0 100-13 6.5 6.5 0 000 13zM6 6.5a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm1 0a.5.5 0 101 0 .5.5 0 00-1 0zM6.5 10a2.5 2.5 0 113.522 2.222 1 1 0 01-.222.11 1.01 1.01 0 01-1 0 1 1 0 01-.222-.11A2.5 2.5 0 016.5 10z"></path></svg> Hostname / IP</th>
+                <th><svg class="wmi-icon" viewBox="0 0 16 16"><path d="M11 1H5v3h6V1zm-1 2H6V2h4v1zm2-1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V2h9zM2 9h12v1H2V9zm0 2h12v1H2v-1zM2 13h12v1H2v-1z"></path></svg> Mainboard & Serial</th>
+                <th><svg class="wmi-icon" viewBox="0 0 16 16"><path d="M4 1a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V2a1 1 0 00-1-1H4zm0 1h8v12H4V2zM6 4h4v1H6V4zm0 2h4v1H6V6zm0 2h4v1H6V8z"></path></svg> CPU / Cores</th>
+                <th><svg class="wmi-icon" viewBox="0 0 16 16"><path d="M3 1a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V2a1 1 0 00-1-1H3zm0 1h10v12H3V2zM5 3h6v2H5V3zm0 3h6v2H5V6zm0 3h6v2H5V9zm0 3h6v1H5v-1z"></path></svg> RAM (Size/Type)</th>
+                <th><svg class="wmi-icon" viewBox="0 0 16 16"><path d="M2 1a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V3a2 2 0 00-2-2H2zm0 1h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V3a1 1 0 011-1zm6 11h2v1H8v-1z"></path></svg> Monitor(s) / SN</th>
+                <th><svg class="wmi-icon" viewBox="0 0 16 16"><path d="M8 0a8 8 0 110 16A8 8 0 018 0zm0 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zm0 3a.5.5 0 01.5.5V8h2a.5.5 0 010 1h-2.5a.5.5 0 01-.5-.5V5a.5.5 0 01.5-.5z"></path></svg> Last Update</th>
             </tr>
         </thead>
         <tbody id="table-body">
-            <tr><td colspan="6" style="text-align:center; padding:50px; color:#8b949e; font-size: 18px;">กำลังโหลดข้อมูลสเปคและ Serial Number...</td></tr>
+            <tr><td colspan="6" style="text-align:center; padding:50px;">กำลังโหลดข้อมูลสเปคและ Serial Number...</td></tr>
         </tbody>
     </table>
 </div>
@@ -79,26 +79,23 @@
             let onlineCount = 0;
 
             rows.forEach(row => {
-                if (row.length < 10) return;
+                if (row.length < 15) return;
                 const c = row.map(v => v.replace(/"/g, '').trim());
                 
-                // คำนวณสถานะ Online จากคอลัมน์ Last Update (index 19)
                 const lastUpdate = new Date(c[19]);
                 const isOnline = (new Date() - lastUpdate) / 1000 / 60 <= 10;
                 const dotColor = isOnline ? 'var(--green)' : '#f85149';
                 if (isOnline) onlineCount++;
 
-                // จัดการข้อมูล Monitor 1-5 (index 12-16)
-                let monitorDisplay = "";
-                let monitorCount = 0;
+                // แก้บั๊ก: Monitor 1-5 ต้องเริ่มที่ index 12 ถึง 16
+                let monitorHtml = "";
+                let hasMonitor = false;
                 for(let i=12; i<=16; i++) {
-                    if(c[i] && c[i] !== "" && c[i] !== "-") {
-                        monitorDisplay += `<div class="monitor-item">🖥️ ${c[i]}</div>`;
-                        monitorCount++;
+                    // กรองคำว่า 0 GB หรือค่าว่างออก
+                    if(c[i] && c[i] !== "" && c[i] !== "-" && c[i] !== "0 GB") {
+                        monitorHtml += `<div class="monitor-item">🖥️ ${c[i]}</div>`;
+                        hasMonitor = true;
                     }
-                }
-                if(monitorCount === 0) {
-                    monitorDisplay = `<span style="color:#444; font-size:13px;">- ไม่มีข้อมูลจอ -</span>`;
                 }
 
                 tbody.innerHTML += `
@@ -120,9 +117,9 @@
                             <span class="chip">${c[8]} ${c[9]}</span>
                         </td>
                         <td>
-                            ${monitorDisplay}
+                            ${hasMonitor ? monitorHtml : '<span style="color:#444; font-size:13px;">- ไม่มีข้อมูลจอ -</span>'}
                         </td>
-                        <td style="font-size:13px; color:#8b949e">
+                        <td style="font-size:14px; color:#8b949e">
                             ${c[19]}
                         </td>
                     </tr>`;
@@ -131,10 +128,7 @@
             document.getElementById('stat-total').innerText = rows.length;
             document.getElementById('stat-online').innerText = onlineCount;
 
-        } catch (e) { 
-            console.error(e); 
-            document.getElementById('table-body').innerHTML = '<tr><td colspan="6" style="text-align:center; color:red; padding:40px; font-size:18px;">เกิดข้อผิดพลาดในการโหลดข้อมูล CSV</td></tr>';
-        }
+        } catch (e) { console.error(e); }
     }
 
     fetchSheetData();
