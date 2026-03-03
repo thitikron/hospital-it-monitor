@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IT Monitor รพ.แม่แตง</title>
+    <title>IT Asset Dashboard — รพ.แม่แตง</title>
     <style>
         :root { --bg: #0d1117; --card: #161b22; --blue: #58a6ff; --green: #3fb950; --border: #30363d; --text: #c9d1d9; }
         body { background: var(--bg); color: var(--text); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; padding: 20px; margin: 0; }
@@ -13,12 +13,13 @@
         .stat-label { color: #8b949e; font-size: 12px; font-weight: 600; text-transform: uppercase; }
         .stat-value { font-size: 32px; font-weight: bold; margin-top: 8px; }
         .table-wrap { background: var(--card); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 1000px; }
-        th { background: #161b22; padding: 12px 15px; font-size: 12px; color: #8b949e; border-bottom: 2px solid var(--border); }
-        td { padding: 12px 15px; border-top: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
-        .hostname { font-weight: 600; color: #fff; }
-        .ip-sub { font-size: 12px; color: var(--blue); font-family: monospace; }
-        .chip { background: #21262d; border: 1px solid var(--border); padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 1200px; }
+        th { background: #161b22; padding: 12px 15px; font-size: 11px; color: #8b949e; border-bottom: 2px solid var(--border); text-transform: uppercase; }
+        td { padding: 12px 15px; border-top: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+        .hostname { font-weight: 600; color: #fff; font-size: 14px; }
+        .sub-text { font-size: 11px; color: #8b949e; font-family: monospace; display: block; margin-top: 2px; }
+        .sn-text { color: var(--blue); font-weight: bold; }
+        .chip { background: #21262d; border: 1px solid var(--border); padding: 2px 8px; border-radius: 12px; font-size: 11px; color: #fff; }
         .btn-refresh { background: #238636; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
         .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
     </style>
@@ -27,19 +28,19 @@
 
 <div class="header">
     <div>
-        <h1 style="margin:0; color:var(--blue); font-size: 24px;">🏥 โรงพยาบาลแม่แตง</h1>
-        <small style="color:#8b949e">Cloud IT Asset Management (Real-time)</small>
+        <h1 style="margin:0; color:var(--blue); font-size: 22px;">🏥 โรงพยาบาลแม่แตง (Cloud Monitor)</h1>
+        <small style="color:#8b949e">ระบบจัดการพัสดุไอทีและตรวจสอบสเปคเครื่องอัตโนมัติ</small>
     </div>
     <button class="btn-refresh" onclick="fetchSheetData()">↻ รีเฟรชข้อมูล</button>
 </div>
 
 <div class="stats-container">
     <div class="stat-card">
-        <div class="stat-label">เครื่องทั้งหมด</div>
+        <div class="stat-label">เครื่องคอมพิวเตอร์ทั้งหมด</div>
         <div class="stat-value" id="stat-total" style="color:var(--blue)">0</div>
     </div>
     <div class="stat-card">
-        <div class="stat-label">สถานะ Online</div>
+        <div class="stat-label">สถานะ Online (10 นาทีล่าสุด)</div>
         <div class="stat-value" id="stat-online" style="color:var(--green)">0</div>
     </div>
 </div>
@@ -49,21 +50,22 @@
         <thead>
             <tr>
                 <th>Hostname / IP</th>
-                <th>Mainboard</th>
-                <th>CPU Model</th>
-                <th>Cores / Threads</th>
-                <th>RAM (Size/Type)</th>
-                <th>GPU (VRAM)</th>
+                <th>Mainboard & Serial</th>
+                <th>Processor / Cores</th>
+                <th>RAM Size/Type</th>
+                <th>Monitor(s) / SN</th>
+                <th>Graphics (VRAM)</th>
                 <th>Last Update</th>
             </tr>
         </thead>
         <tbody id="table-body">
-            <tr><td colspan="7" style="text-align:center; padding:40px;">กำลังโหลดข้อมูล...</td></tr>
+            <tr><td colspan="7" style="text-align:center; padding:40px;">กำลังดึงข้อมูล SN และ Hardware จากระบบ Cloud...</td></tr>
         </tbody>
     </table>
 </div>
 
 <script>
+    // URL CSV จาก Google Sheet ของคุณ
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQm0MhAuvfAWym8vr8FAI-n0WXwfQnfc4xibIXTadPj92y__oCNIelMQL8O65YNHOh2NfWSoM2wQ3E/pub?gid=0&single=true&output=csv';
 
     async function fetchSheetData() {
@@ -80,27 +82,40 @@
                 if (row.length < 5) return;
                 const c = row.map(v => v.replace(/"/g, '').trim());
                 
-                const lastUpdate = new Date(c[13]);
+                // คำนวณสถานะ Online
+                const lastUpdate = new Date(c[15]); // Last Update Column
                 const isOnline = (new Date() - lastUpdate) / 1000 / 60 <= 10;
                 const dotColor = isOnline ? 'var(--green)' : '#f85149';
                 if (isOnline) online++;
 
+                // ลำดับคอลัมน์: 0:Host, 1:IP, 4:MB, 5:MB_SN, 6:CPU, 7:Cores, 8:RAM, 9:Type, 10:GPU, 11:VRAM, 12:Monitor, 15:Time
                 tbody.innerHTML += `
                     <tr>
                         <td>
                             <div class="status-dot" style="background:${dotColor}"></div>
-                            <span class="hostname">${c[0]}</span><br>
-                            <span class="ip-sub">${c[1]}</span>
+                            <span class="hostname">${c[0]}</span>
+                            <span class="sub-text">${c[1]}</span>
                         </td>
-                        <td style="color:#8b949e; font-size:12px;">${c[4]}</td>
-                        <td><div style="color:var(--blue)">${c[5]}</div></td>
-                        <td><span class="chip">${c[6]}</span></td>
-                        <td><b>${c[7]}</b> <small style="color:#8b949e">${c[8]}</small></td>
                         <td>
-                            <div>${c[9]}</div>
-                            <small style="color:var(--green)">${c[10] !== '-' && c[10] !== '0 GB' ? 'VRAM: ' + c[10] : ''}</small>
+                            <div style="color:#fff">${c[4]}</div>
+                            <span class="sub-text">SN: <span class="sn-text">${c[5]}</span></span>
                         </td>
-                        <td style="font-size:12px; color:#8b949e">${c[13]}</td>
+                        <td>
+                            <div style="color:var(--blue)">${c[6]}</div>
+                            <small style="color:#8b949e">${c[7]}</small>
+                        </td>
+                        <td>
+                            <span class="chip">${c[8]}</span>
+                            <small style="color:#8b949e">${c[9]}</small>
+                        </td>
+                        <td>
+                            <div style="font-size:11px; color:#fff; line-height:1.4;">${c[12].replace(/\//g, '<br>')}</div>
+                        </td>
+                        <td>
+                            <div style="font-size:12px;">${c[10]}</div>
+                            <small style="color:var(--green)">${c[11] !== '-' && c[11] !== '0 GB' ? 'VRAM: ' + c[11] : ''}</small>
+                        </td>
+                        <td style="font-size:11px; color:#8b949e">${c[15]}</td>
                     </tr>`;
             });
 
@@ -109,6 +124,7 @@
 
         } catch (e) { console.error(e); }
     }
+
     fetchSheetData();
     setInterval(fetchSheetData, 60000);
 </script>
