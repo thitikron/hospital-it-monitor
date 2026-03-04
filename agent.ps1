@@ -1,49 +1,137 @@
-# agent.ps1 (Advanced Spec Edition)
-$ServerURL = "https://script.google.com/macros/s/AKfycbxFZcX9_DlVFBgSsKjoP1oj8A_7ehHO6gj5O2gAjZxSx-YM5zVEji6CQkK9I-pldCqr/exec"
+# =====================================================
+# agent.ps1 v2 — Hospital IT Monitor Agent
+# ดึง RAM Type (DDR3/4/5) และ Monitor + SN
+# =====================================================
 
-# 1. ข้อมูล CPU (ดึง P-Core/E-Core และ Threads)
-$cpu = Get-CimInstance Win32_Processor
-# สำหรับ Gen 12 ขึ้นไป เราจะพยายามดึงรายละเอียด Core (ถ้า WMI รองรับ) 
-# แต่พื้นฐานจะใช้ฟอร์แมต: 14 Cores (6P + 8E) / 20 Threads ตามที่คุณต้องการ
-$cores = $cpu.NumberOfCores
-$threads = $cpu.NumberOfLogicalProcessors
-$pCores = $cores - ($threads - $cores) # Logic คำนวณเบื้องต้นสำหรับ Hybrid Architecture
-$eCores = $cores - $pCores
-$cpuCoresDisplay = "$cores Cores ($pCores`P + $eCores`E) / $threads Threads"
+# ======= แก้ไขตรงนี้ =========
+$ServerURL    = "http://192.168.1.100/hospital-monitor/api/report.php"
+$ApiKey       = "HOSP-MONITOR-2024-CHANGE-ME"
+$AgentVersion = "2.0"
+# ==============================
 
-# 2. ข้อมูล Mainboard
-$baseboard = Get-CimInstance Win32_BaseBoard
-$mbDisplay = "$($baseboard.Manufacturer) $($baseboard.Product) ($($baseboard.Version))"
+$LocationFile = "D:\Programs\location.txt"
 
-# 3. ข้อมูล RAM
-$mem = Get-CimInstance Win32_PhysicalMemory | Select-Object -First 1
-$ramTotal = [math]::Round((Get-CimInstance Win32_PhysicalMemory | Measure-Object Capacity -Sum).Sum / 1GB, 0)
-$ramType = if ($mem.ConfiguredClockSpeed -ge 4800) { "DDR5" } else { "DDR4" }
-
-# 4. ข้อมูล GPU & VRAM (เช็คเฉพาะการ์ดจอแยก)
-$gpu = Get-CimInstance Win32_VideoController | Where-Object { $_.AdapterRAM -gt 1GB } | Select-Object -First 1
-$gpuName = if ($gpu) { $gpu.Name } else { "On-Board Graphics" }
-$gpuVRAM = if ($gpu) { "$([math]::Round($gpu.AdapterRAM / 1GB, 0)) GB" } else { "-" }
-
-$payload = @{
-    hostname   = $env:COMPUTERNAME
-    ip_address = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" }).IPAddress[0]
-    department = "IT"
-    location   = "Server Room"
-    mainboard  = $mbDisplay
-    cpu_name   = $cpu.Name
-    cpu_cores  = $cpuCoresDisplay
-    ram_total  = "$ramTotal GB"
-    ram_type   = $ramType
-    gpu_name   = $gpuName
-    gpu_vram   = $gpuVRAM
-    os_name    = (Get-CimInstance Win32_OperatingSystem).Caption
-    logged_user = $env:USERNAME
-} | ConvertTo-Json
-
-try {
-    Invoke-RestMethod -Uri $ServerURL -Method Post -Body $payload -ContentType "application/json"
-    Write-Host "Success: Advanced Spec sent to Cloud." -ForegroundColor Green
-} catch {
-    Write-Host "Error: Failed to send data." -ForegroundColor Red
+function Get-LocationFromFile {
+    if (Test-Path $LocationFile) {
+        $lines = (Get-Content $LocationFile -Raw -Encoding UTF8) -split "`n" | ForEach-Object { $_.Trim() }
+        $loc  = ($lines | Where-Object { $_ -match "^location\s*=" }) -replace "^location\s*=\s*",""  | Select-Object -First 1
+        $dept = ($lines | Where-Object { $_ -match "^department\s*=" }) -replace "^department\s*=\s*","" | Select-Object -First 1
+        return @{ Location = $loc; Department = $dept }
+    }
+    return @{ Location = $null; Department = $null }
 }
+
+function Get-RamType {
+    # SMBIOSMemoryType: 20=DDR2, 24=DDR3, 26=DDR4, 34=DDR5
+    $typeMap = @{20='DDR2'; 24='DDR3'; 26='DDR4'; 34='DDR5'; 0='Unknown'}
+    try {
+        $mem = Get-CimInstance Win32_PhysicalMemory | Select-Object -First 1
+        $t = [int]($mem.SMBIOSMemoryType)
+        return if ($typeMap.ContainsKey($t)) { $typeMap[$t] } else { "DDR($t)" }
+    } catch { return $null }
+}
+
+function Get-MonitorInfo {
+    $result = @()
+    try {
+        $monitors = Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorID -ErrorAction Stop
+        foreach ($m in $monitors) {
+            $name = ($m.UserFriendlyName | Where-Object {$_ -ne 0} | ForEach-Object {[char]$_}) -join ''
+            $sn   = ($m.SerialNumberID   | Where-Object {$_ -ne 0} | ForEach-Object {[char]$_}) -join ''
+            if ($name) {
+                $result += @{ name = $name.Trim(); sn = $sn.Trim() }
+            }
+        }
+    } catch {
+        # บาง PC ไม่มี WMI Monitor → ข้ามได้
+    }
+    return $result
+}
+
+function Get-IPInfo {
+    $adapter = Get-NetIPAddress -AddressFamily IPv4 |
+               Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.*" } |
+               Sort-Object PrefixLength -Descending | Select-Object -First 1
+    $mac = (Get-NetAdapter | Where-Object { $_.ifIndex -eq $adapter.InterfaceIndex } | Select-Object -First 1).MacAddress
+    return @{ IPAddress = $adapter.IPAddress; MacAddress = $mac }
+}
+
+function Get-AllInfo {
+    try {
+        $cs     = Get-CimInstance Win32_ComputerSystem
+        $bios   = Get-CimInstance Win32_BIOS
+        $cpu    = Get-CimInstance Win32_Processor | Select-Object -First 1
+        $os     = Get-CimInstance Win32_OperatingSystem
+        $ramMem = Get-CimInstance Win32_PhysicalMemory
+        $disk   = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
+        $diskPh = Get-CimInstance Win32_DiskDrive | Select-Object -First 1
+        $gpu    = Get-CimInstance Win32_VideoController | Select-Object -First 1
+
+        $totalRamGB = [math]::Round($cs.TotalPhysicalMemory / 1GB, 2)
+        $freeRamGB  = [math]::Round($os.FreePhysicalMemory * 1KB / 1GB, 2)
+        $usedRamGB  = [math]::Round($totalRamGB - $freeRamGB, 2)
+
+        $net     = Get-IPInfo
+        $loc     = Get-LocationFromFile
+        $mons    = Get-MonitorInfo
+        $ramType = Get-RamType
+
+        return @{
+            hostname         = $env:COMPUTERNAME
+            location         = $loc.Location
+            department       = $loc.Department
+            ip_address       = $net.IPAddress
+            mac_address      = $net.MacAddress
+            manufacturer     = $cs.Manufacturer
+            model            = $cs.Model
+            serial_number    = $bios.SerialNumber
+            bios_version     = $bios.SMBIOSBIOSVersion
+            cpu_name         = $cpu.Name.Trim()
+            cpu_id           = $cpu.ProcessorId.Trim()
+            cpu_cores        = $cpu.NumberOfCores
+            cpu_threads      = $cpu.NumberOfLogicalProcessors
+            cpu_speed_mhz    = $cpu.MaxClockSpeed
+            ram_total_gb     = $totalRamGB
+            ram_used_gb      = $usedRamGB
+            ram_slots        = ($ramMem | Measure-Object).Count
+            ram_type         = $ramType
+            disk_total_gb    = [math]::Round($disk.Size / 1GB, 2)
+            disk_free_gb     = [math]::Round($disk.FreeSpace / 1GB, 2)
+            disk_model       = $diskPh.Model
+            monitors         = $mons          # array [{name, sn}, ...]
+            os_name          = $os.Caption
+            os_version       = $os.Version
+            os_build         = $os.BuildNumber
+            os_architecture  = $os.OSArchitecture
+            last_boot        = $os.LastBootUpTime.ToString("yyyy-MM-dd HH:mm:ss")
+            gpu_name         = $gpu.Caption
+            domain           = $cs.Domain
+            logged_user      = $env:USERNAME
+            agent_version    = $AgentVersion
+        }
+    } catch {
+        Write-Host "ERROR: $_" -ForegroundColor Red
+        return $null
+    }
+}
+
+function Send-Data($Data) {
+    $json    = $Data | ConvertTo-Json -Depth 5 -Compress
+    $headers = @{ "Content-Type"="application/json"; "X-API-Key"=$ApiKey }
+    try {
+        $res = Invoke-RestMethod -Uri $ServerURL -Method POST -Body $json -Headers $headers -TimeoutSec 15
+        if ($res.success) {
+            Write-Host "[OK] $($Data.hostname) → $($Data.ip_address) | RAM: $($Data.ram_type) | Monitors: $($Data.monitors.Count)" -ForegroundColor Green
+        } else {
+            Write-Host "[FAIL] $($res.error)" -ForegroundColor Red
+        }
+    } catch {
+        Write-Host "[ERROR] $_" -ForegroundColor Red
+    }
+}
+
+# MAIN
+Write-Host "=== Hospital IT Monitor Agent v$AgentVersion ===" -ForegroundColor Cyan
+$info = Get-AllInfo
+if ($info) { Send-Data -Data $info }
+Write-Host "Done." -ForegroundColor Cyan
