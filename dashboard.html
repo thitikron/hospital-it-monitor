@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital IT Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #0b0f18;
+  --bg2:    #131929;
+  --bg3:    #1a2235;
+  --bg4:    #1f2a40;
+  --bd:     #243048;
+  --bd2:    #2e3f5c;
+  --text:   #e2eaf6;
+  --text2:  #8ba0bc;
+  --text3:  #4d6480;
+  --accent: #4da3ff;
+  --green:  #2ecc71;
+  --green2: #27ae60;
+  --red:    #e74c3c;
+  --yellow: #f39c12;
+  --purple: #9b59b6;
+  --cyan:   #1abc9c;
+  --r:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px;-webkit-font-smoothing:antialiased}
+body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(11,15,24,.97);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;gap:14px;
+  padding:0 22px;height:56px;
+}
+.brand{display:flex;align-items:center;gap:11px;flex-shrink:0}
+.brand-icon{
+  width:36px;height:36px;border-radius:9px;
+  background:linear-gradient(135deg,#4da3ff 0%,#1a6fd4 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+  box-shadow:0 2px 12px rgba(77,163,255,.35);
+}
+.brand h1{font-size:15px;font-weight:700;color:#fff;letter-spacing:.01em;line-height:1.1}
+.brand p{font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+.tsearch{flex:1;max-width:440px;position:relative}
+.tsearch input{
+  width:100%;padding:8px 14px 8px 38px;
+  background:var(--bg3);border:1px solid var(--bd);
+  color:var(--text);border-radius:var(--r);
+  font-size:12px;font-family:inherit;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.tsearch input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(77,163,255,.12)}
+.tsearch input::placeholder{color:var(--text3)}
+.tsearch .si{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;font-size:14px}
+.tright{margin-left:auto;display:flex;align-items:center;gap:8px}
+.live{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);font-weight:700;letter-spacing:.06em;padding:5px 10px;background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.2);border-radius:20px}
+.live::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s;white-space:nowrap;letter-spacing:.01em}
+.btn-ghost{background:transparent;border:1px solid var(--bd);color:var(--text2)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);background:rgba(77,163,255,.06)}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(77,163,255,.3)}
+.btn-primary:hover{background:#64b3ff;transform:translateY(-1px)}
+
+/* ── SETUP ── */
+.setup-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;text-align:center}
+.setup-box{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;padding:40px;max-width:560px;width:100%}
+.setup-box h2{font-size:20px;color:#fff;margin-bottom:10px}
+.setup-box p{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:24px}
+.step-item{display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;text-align:left}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.step-text{font-size:12px;color:var(--text2);line-height:1.6}
+.step-text strong{color:var(--text);display:block;margin-bottom:2px;font-size:13px}
+.url-input{width:100%;background:var(--bg3);border:1px solid var(--bd);color:var(--text);border-radius:var(--r);padding:10px 14px;font-size:12px;font-family:'JetBrains Mono',monospace;outline:none;margin-bottom:10px;transition:border-color .2s}
+.url-input:focus{border-color:var(--accent)}
+.url-input::placeholder{color:var(--text3)}
+
+/* ── MAIN ── */
+main{padding:20px 22px;max-width:1900px;margin:0 auto}
+
+/* ── STAT CARDS ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.sc{
+  background:var(--bg2);border:1px solid var(--bd);
+  border-radius:var(--r);padding:18px 20px;
+  position:relative;overflow:hidden;transition:border-color .2s;
+}
+.sc:hover{border-color:var(--bd2)}
+.sc::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+}
+.sc.total::before{background:linear-gradient(90deg,var(--accent),transparent)}
+.sc.online-c::before{background:linear-gradient(90deg,var(--green),transparent)}
+.sc.offline-c::before{background:linear-gradient(90deg,var(--red),transparent)}
+.sc.dept-c::before{background:linear-gradient(90deg,var(--purple),transparent)}
+.sc-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-bottom:8px}
+.sc-val{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;line-height:1;color:#fff}
+.sc-val.a{color:var(--accent)} .sc-val.g{color:var(--green)} .sc-val.r{color:var(--red)}
+.sc-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:32px;opacity:.12}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.tabs{display:flex;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
+.tab{padding:7px 16px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);border:none;background:transparent;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:5px}
+.tab:hover{background:var(--bg4);color:var(--text)}
+.tab.active{background:var(--bg4);color:#fff}
+.tab.active.all-tab{color:var(--accent)}
+.tab.active.on-tab{color:var(--green)}
+.tab.active.off-tab{color:var(--red)}
+select.ds{background:var(--bg3);border:1px solid var(--bd);color:var(--text2);padding:7px 12px;border-radius:var(--r);font-size:12px;font-family:inherit;outline:none;cursor:pointer;transition:border-color .2s}
+select.ds:focus{border-color:var(--accent)}
+.ml{margin-left:auto;display:flex;align-items:center;gap:10px}
+.cnt{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;background:var(--bg3);padding:4px 10px;border-radius:20px;border:1px solid var(--bd)}
+.lu-text{font-size:10px;color:var(--text3)}
+
+/* ── TABLE ── */
+.tw{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{
+  background:var(--bg3);padding:10px 14px;text-align:left;
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--text3);
+  border-bottom:2px solid var(--bd);white-space:nowrap;
+}
+thead th.sortable{cursor:pointer;user-select:none;transition:color .15s}
+thead th.sortable:hover{color:var(--accent)}
+thead th .si2{opacity:.3;margin-left:3px;font-size:9px}
+
+tbody tr{border-bottom:1px solid rgba(36,48,72,.8);transition:background .1s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(77,163,255,.05)}
+tbody tr:hover td:first-child{border-left:3px solid var(--accent)}
+tbody td{padding:12px 14px;vertical-align:top;border-left:3px solid transparent}
+tbody td:first-child{border-left:3px solid transparent;transition:border-color .1s}
+
+/* ── CELLS ── */
+.rn{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);text-align:center;width:40px;padding:12px 8px}
+
+/* Hostname */
+.hn-cell{display:flex;align-items:flex-start;gap:10px}
+.status-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;
+}
+.status-dot.on{background:var(--green);box-shadow:0 0 8px rgba(46,204,113,.6)}
+.status-dot.off{background:var(--red);box-shadow:0 0 4px rgba(231,76,60,.4)}
+.hn{font-weight:700;color:#fff;font-size:14px;letter-spacing:.01em}
+.ip-main{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);margin-top:3px}
+.ip-extra{font-size:10px;color:var(--text3);margin-top:2px;line-height:1.5}
+
+/* Board */
+.board-mfr{color:var(--text);font-weight:600;font-size:12px;line-height:1.3}
+.sn-row{margin-top:4px;display:flex;align-items:center;gap:4px}
+.sn-label{font-size:10px;color:var(--text3);font-weight:600}
+.sn-val{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cyan)}
+
+/* CPU */
+.cpu-id{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:3px;word-break:break-all}
+.cpu-nm{color:var(--text);font-size:12px;font-weight:500;line-height:1.3}
+.cpu-ct{font-size:11px;color:var(--text2);margin-top:3px;display:flex;align-items:center;gap:5px}
+.tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.tag-cores{background:rgba(77,163,255,.12);color:var(--accent)}
+.tag-threads{background:rgba(155,89,182,.12);color:var(--purple)}
+
+/* RAM */
+.ram-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ram-main{font-size:13px;font-weight:700;color:#fff}
+.tag-ddr{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;background:rgba(155,89,182,.15);color:var(--purple);border:1px solid rgba(155,89,182,.25)}
+.ram-bar-wrap{width:100%;margin-top:6px}
+.ram-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.ram-fill{height:100%;border-radius:2px;transition:width .5s}
+.bar-g{background:linear-gradient(90deg,var(--green2),var(--green))}
+.bar-y{background:linear-gradient(90deg,#c07a00,var(--yellow))}
+.bar-r{background:linear-gradient(90deg,#c0392b,var(--red))}
+.ram-pct{font-size:10px;color:var(--text3);margin-top:3px;font-family:'JetBrains Mono',monospace}
+
+/* Disk */
+.disk-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.disk-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:5px;font-size:11px;font-weight:700;
+}
+.disk-ssd{background:rgba(26,188,156,.12);color:var(--cyan);border:1px solid rgba(26,188,156,.25)}
+.disk-hdd{background:rgba(243,156,18,.10);color:var(--yellow);border:1px solid rgba(243,156,18,.25)}
+.disk-detail{font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5}
+
+/* Monitor */
+.mon-list{display:flex;flex-direction:column;gap:5px}
+.mon-item{display:flex;align-items:baseline;gap:5px}
+.mon-icon{font-size:13px;flex-shrink:0}
+.mon-name{color:var(--text);font-size:12px;font-weight:500}
+.mon-sn{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)}
+.no-mon{font-size:11px;color:var(--text3);font-style:italic;opacity:.6}
+
+/* Last update */
+.user-name{font-weight:600;color:var(--text);font-size:12px}
+.last-ts{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px}
+
+/* ── LOADING / EMPTY ── */
+.ld{display:flex;align-items:center;justify-content:center;padding:60px;gap:12px;color:var(--text3);font-size:13px}
+.sp{width:20px;height:20px;border:2px solid var(--bd);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.es{text-align:center;padding:60px 20px;color:var(--text3)}
+.es .ei{font-size:40px;margin-bottom:12px;opacity:.3}
+.es p{font-size:13px}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--bd2);border-radius:14px;width:100%;max-width:820px;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.7);animation:su .2s ease}
+@keyframes su{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.mh{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--bd);background:var(--bg3)}
+.mt{font-size:18px;font-weight:700;color:#fff;letter-spacing:.01em}
+.ms{font-size:11px;color:var(--text3);margin-top:3px}
+.mc{background:transparent;border:1px solid var(--bd);color:var(--text3);font-size:16px;cursor:pointer;padding:5px 10px;border-radius:6px;transition:.15s;line-height:1}
+.mc:hover{background:var(--bg4);color:var(--text);border-color:var(--bd2)}
+.mb{padding:24px}
+.ds2{margin-bottom:22px}
+.dst{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--accent);margin-bottom:12px;padding-bottom:8px;
+  border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;
+}
+.dg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.dg3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.di{background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;transition:border-color .2s}
+.di:hover{border-color:var(--bd2)}
+.di label{display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px}
+.di .v{font-size:13px;color:#fff;font-weight:500;line-height:1.4;word-break:break-word}
+.di .v.mo{font-family:'JetBrains Mono',monospace;font-size:12px}
+.di .v.big{font-size:18px;font-weight:700}
+.pb-wrap{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.pb{flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden}
+.pf{height:100%;border-radius:4px;transition:width .5s}
+.pg{background:linear-gradient(90deg,var(--green2),var(--green))}
+.py{background:linear-gradient(90deg,#c07a00,var(--yellow))}
+.pr{background:linear-gradient(90deg,#c0392b,var(--red))}
+.pl{font-size:12px;font-family:'JetBrains Mono',monospace;color:#fff;white-space:nowrap}
+
+/* ── ERR BANNER ── */
+.err-banner{background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:var(--red);padding:10px 16px;border-radius:var(--r);margin-bottom:16px;font-size:12px;display:none}
+.err-banner.show{display:block}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--green);color:var(--green);padding:10px 18px;border-radius:8px;font-size:12px;font-weight:600;z-index:500;display:none;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.show{display:block}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+@media(max-width:1200px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){main{padding:14px};.topbar{padding:0 14px};.tsearch{display:none}}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen" class="setup-screen" style="display:none">
+  <div class="setup-box">
+    <h2>⚙️ ตั้งค่า Google Apps Script</h2>
+    <p>ระบบอ่านข้อมูลจาก Google Sheets โดยตรง<br>ไม่ต้องใช้ PHP หรือ Server ใดๆ</p>
+    <div style="margin-bottom:20px">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>เปิด Google Apps Script</strong>ไปที่ script.google.com → New Project → วางโค้ด Code.gs</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Deploy เป็น Web App</strong>Deploy → New Deployment → Execute as: Me → Anyone → Deploy</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>วาง URL ด้านล่าง</strong></div>
+      </div>
+    </div>
+    <input type="url" class="url-input" id="setup-url" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="saveScriptUrl()">✅ บันทึกและเริ่มใช้งาน</button>
+    <p style="font-size:10px;color:var(--text3);margin-top:10px">URL บันทึกใน localStorage เท่านั้น</p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none">
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🏥</div>
+    <div>
+      <h1 id="hosp-name">Hospital IT Monitor</h1>
+      <p>Google Sheets · Asset System</p>
+    </div>
+  </div>
+  <div class="tsearch">
+    <span class="si">🔍</span>
+    <input type="text" id="search-input" placeholder="ค้นหา Hostname, IP, S/N, CPU ID..." autocomplete="off">
+  </div>
+  <div class="tright">
+    <div class="live">LIVE</div>
+    <button class="btn btn-ghost" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-ghost" id="btn-sheet">📊 Sheet</button>
+    <button class="btn btn-ghost" onclick="showSetup()" title="Settings">⚙</button>
+    <button class="btn btn-primary" onclick="fetchData()">↻ Refresh</button>
+  </div>
+</header>
+
+<main>
+  <div class="err-banner" id="err-banner"></div>
+
+  <div class="stats">
+    <div class="sc total">
+      <div class="sc-label">เครื่องทั้งหมด</div>
+      <div class="sc-val a" id="st-total">—</div>
+      <div class="sc-icon">🖥</div>
+    </div>
+    <div class="sc online-c">
+      <div class="sc-label">ออนไลน์ (10 นาทีล่าสุด)</div>
+      <div class="sc-val g" id="st-online">—</div>
+      <div class="sc-icon">✅</div>
+    </div>
+    <div class="sc offline-c">
+      <div class="sc-label">ออฟไลน์</div>
+      <div class="sc-val r" id="st-offline">—</div>
+      <div class="sc-icon">⚠️</div>
+    </div>
+    <div class="sc dept-c">
+      <div class="sc-label">แผนก / Ward</div>
+      <div class="sc-val" id="st-dept">—</div>
+      <div class="sc-icon">🏢</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="tabs">
+      <button class="tab active all-tab"  onclick="setStatus('all',this)">ทั้งหมด</button>
+      <button class="tab on-tab"   onclick="setStatus('online',this)">🟢 Online</button>
+      <button class="tab off-tab"  onclick="setStatus('offline',this)">🔴 Offline</button>
+    </div>
+    <select class="ds" id="dept-filter" onchange="applyFilter()">
+      <option value="">— ทุกแผนก —</option>
+    </select>
+    <div class="ml">
+      <span class="cnt" id="cnt-badge">0 เครื่อง</span>
+      <span class="lu-text" id="last-update"></span>
+    </div>
+  </div>
+
+  <div class="tw">
+    <div class="ld" id="loading"><div class="sp"></div><span>กำลังโหลดข้อมูลจาก Google Sheets...</span></div>
+    <div id="tc" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px;text-align:center">#</th>
+            <th class="sortable" onclick="sortBy('hostname')">🖥 HOSTNAME / IP <span class="si2">↕</span></th>
+            <th class="sortable" onclick="sortBy('manufacturer')">🔩 MAINBOARD & SERIAL <span class="si2">↕</span></th>
+            <th class="sortable" onclick="sortBy('cpu_name')">⚡ CPU / CORES <span class="si2">↕</span></th>
+            <th class="sortable" onclick="sortBy('ram_total_gb')">🧠 RAM <span class="si2">↕</span></th>
+            <th>💾 STORAGE</th>
+            <th>🖥 MONITOR(S)</th>
+            <th class="sortable" onclick="sortBy('last_seen')">🕐 LAST UPDATE <span class="si2">↕</span></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="es" id="es" style="display:none">
+        <div class="ei">🖥</div>
+        <p>ไม่พบเครื่องคอมพิวเตอร์</p>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="ov" onclick="closeOv(event)">
+  <div class="modal">
+    <div class="mh">
+      <div><div class="mt" id="m-hn">—</div><div class="ms" id="m-sl">—</div></div>
+      <button class="mc" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mb" id="m-body"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const LS_KEY     = "hosp_script_url";
+const SHEET_URL  = "https://docs.google.com/spreadsheets/d/1ofkXAUiXSADCUQtV11D5urN8cV_aO7TD4WcaH8AgiQI/edit";
+const HOSP_NAME  = "โรงพยาบาล";
+const REFRESH_MS = 60000;
+
+let allData = [], filteredData = [];
+let currentSort  = { key:'last_seen', dir:-1 };
+let currentStatus = 'all';
+let refreshTimer;
+
+function init() {
+  document.getElementById('hosp-name').textContent = HOSP_NAME;
+  document.getElementById('btn-sheet').onclick = () => window.open(SHEET_URL,'_blank');
+  const url = localStorage.getItem(LS_KEY);
+  if (!url) { showSetup(); }
+  else {
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    fetchData(); startAutoRefresh();
+  }
+}
+
+function saveScriptUrl() {
+  const url = document.getElementById('setup-url').value.trim();
+  if (!url.includes('script.google.com')) { alert('URL ไม่ถูกต้อง'); return; }
+  localStorage.setItem(LS_KEY, url);
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  fetchData(); startAutoRefresh();
+}
+function showSetup() {
+  document.getElementById('setup-url').value = localStorage.getItem(LS_KEY)||'';
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+}
+
+async function fetchData() {
+  const scriptUrl = localStorage.getItem(LS_KEY);
+  if (!scriptUrl) return;
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('tc').style.display = 'none';
+  document.getElementById('err-banner').classList.remove('show');
+  try {
+    const res  = await fetch(scriptUrl, { redirect:'follow' });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    allData = json.computers || [];
+    document.getElementById('st-total').textContent   = json.stats?.total  || 0;
+    document.getElementById('st-online').textContent  = json.stats?.online || 0;
+    document.getElementById('st-offline').textContent = (json.stats?.total||0)-(json.stats?.online||0);
+    document.getElementById('st-dept').textContent    = json.stats?.departments || 0;
+    document.getElementById('last-update').textContent = 'อัปเดต: '+new Date().toLocaleTimeString('th-TH');
+    const ds = document.getElementById('dept-filter'), cv = ds.value;
+    while (ds.options.length > 1) ds.remove(1);
+    (json.departments||[]).forEach(d => { const o=new Option(d,d); if(d===cv) o.selected=true; ds.add(o); });
+    applyFilter();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('tc').style.display = 'block';
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('tc').style.display = 'block';
+    const b = document.getElementById('err-banner');
+    b.textContent = '⚠ '+e.message; b.classList.add('show');
+  }
+}
+
+function applyFilter() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const dept   = document.getElementById('dept-filter').value;
+  filteredData = allData.filter(c => {
+    if (currentStatus==='online'  && !c.is_online) return false;
+    if (currentStatus==='offline' &&  c.is_online) return false;
+    if (dept && c.department !== dept) return false;
+    if (search) {
+      const hay = [c.hostname,c.ip_address,c.ip_all,c.ip_public,
+                   c.department,c.location,c.model,c.serial_number,
+                   c.cpu_id,c.logged_user,c.manufacturer].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+  render(filteredData);
+}
+
+function render(data) {
+  data = [...data].sort((a,b)=>{
+    let va=a[currentSort.key]??'', vb=b[currentSort.key]??'';
+    const na=parseFloat(va),nb=parseFloat(vb);
+    if(!isNaN(na)&&!isNaN(nb)) return currentSort.dir*(na-nb);
+    return currentSort.dir*String(va).localeCompare(String(vb));
+  });
+
+  const tbody=document.getElementById('tbody'), es=document.getElementById('es');
+  document.getElementById('cnt-badge').textContent = data.length+' เครื่อง';
+  if (!data.length) { tbody.innerHTML=''; es.style.display='block'; return; }
+  es.style.display='none';
+
+  tbody.innerHTML = data.map((c,idx) => {
+    const online = !!parseInt(c.is_online);
+
+    // IPs
+    const ipMain  = c.ip_address || '—';
+    const ipExtra = buildIpExtra(c);
+
+    // Monitors
+    let monHTML = `<span class="no-mon">ไม่มีข้อมูล</span>`;
+    if (c.monitors && c.monitors !== '') {
+      try {
+        const mons = typeof c.monitors==='string' ? JSON.parse(c.monitors) : c.monitors;
+        if (mons && mons.length) {
+          monHTML = `<div class="mon-list">`+mons.map(m=>
+            `<div class="mon-item">
+              <span class="mon-icon">🖥</span>
+              <span class="mon-name">${esc(m.name||'?')}</span>
+              <span class="mon-sn">SN:${esc(m.sn||'—')}</span>
+            </div>`
+          ).join('')+`</div>`;
+        }
+      } catch(e){}
+    }
+
+    // RAM bar
+    const rp = c.ram_total_gb>0 ? Math.round((c.ram_used_gb/c.ram_total_gb)*100) : 0;
+    const rClass = rp>=85?'bar-r':rp>=70?'bar-y':'bar-g';
+
+    // Disk badges
+    const diskHTML = buildDiskBadge(c);
+
+    // CPU short
+    const cpuShort = (c.cpu_name||'—').replace(/Intel\(R\)\s?Core\(TM\)\s?/i,'').replace(/\s+CPU\s+/,' ');
+
+    const ls = c.last_seen || '';
+
+    return `<tr onclick='openDetail(${JSON.stringify(c).replace(/'/g,"&#39;")})'>
+      <td class="rn">${idx+1}</td>
+      <td>
+        <div class="hn-cell">
+          <div class="status-dot ${online?'on':'off'}"></div>
+          <div>
+            <div class="hn">${esc(c.hostname)}</div>
+            <div class="ip-main">${esc(ipMain)}</div>
+            ${ipExtra ? `<div class="ip-extra">${ipExtra}</div>` : ''}
+          </div>
+        </div>
+      </td>
+      <td>
+        <div class="board-mfr">${esc(c.manufacturer||'—')}</div>
+        <div class="sn-row">
+          <span class="sn-label">S/N</span>
+          <span class="sn-val">${esc(c.serial_number||'—')}</span>
+        </div>
+      </td>
+      <td>
+        ${c.cpu_id ? `<div class="cpu-id">${esc(c.cpu_id)}</div>` : ''}
+        <div class="cpu-nm">${esc(cpuShort||'—')}</div>
+        <div class="cpu-ct">
+          ${c.cpu_cores ? `<span class="tag tag-cores">${c.cpu_cores}C</span>` : ''}
+          ${c.cpu_threads ? `<span class="tag tag-threads">${c.cpu_threads}T</span>` : ''}
+        </div>
+      </td>
+      <td>
+        <div class="ram-row">
+          <span class="ram-main">${c.ram_total_gb||'—'} GB</span>
+          ${c.ram_type ? `<span class="tag-ddr">${esc(c.ram_type)}</span>` : ''}
+        </div>
+        <div class="ram-bar-wrap">
+          <div class="ram-bar"><div class="ram-fill ${rClass}" style="width:${rp}%"></div></div>
+          <div class="ram-pct">ใช้ ${c.ram_used_gb||0}GB (${rp}%)</div>
+        </div>
+      </td>
+      <td>${diskHTML}</td>
+      <td>${monHTML}</td>
+      <td>
+        <div class="user-name">👤 ${esc(c.logged_user||'—')}</div>
+        <div class="last-ts">${ls ? ls.toString().substring(0,16) : '—'}</div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function buildIpExtra(c) {
+  const parts = [];
+  if (c.ip_public && c.ip_public !== c.ip_address) {
+    parts.push(`🌐 ${esc(c.ip_public)} (Public)`);
+  }
+  if (c.ip_all) {
+    const allIps = c.ip_all.split('|').map(s=>s.trim()).filter(s=>s && !s.startsWith(c.ip_address));
+    allIps.forEach(ip => parts.push(`🔗 ${esc(ip)}`));
+  }
+  return parts.join('<br>');
+}
+
+function buildDiskBadge(c) {
+  let html = '<div class="disk-row">';
+  const cType = c.c_drive_type || '';
+  if (cType === 'SSD') {
+    html += `<span class="disk-badge disk-ssd">⚡ C: SSD</span>`;
+  } else if (cType === 'HDD') {
+    html += `<span class="disk-badge disk-hdd">💿 C: HDD</span>`;
+  }
+  html += '</div>';
+  if (c.ssd_count || c.hdd_count) {
+    html += `<div class="disk-detail">`;
+    if (c.ssd_count > 0) html += `SSD × ${c.ssd_count} &nbsp;`;
+    if (c.hdd_count > 0) html += `HDD × ${c.hdd_count}`;
+    html += `</div>`;
+  }
+  if (c.disk_summary) {
+    const parts = c.disk_summary.split('|').map(s=>s.trim());
+    html += `<div class="disk-detail">${parts.map(p=>esc(p)).join('<br>')}</div>`;
+  }
+  return html;
+}
+
+// MODAL
+function openDetail(cStr) {
+  const c = typeof cStr==='string' ? JSON.parse(cStr) : cStr;
+  document.getElementById('ov').classList.add('open');
+  document.getElementById('m-hn').textContent = c.hostname;
+  const online = !!parseInt(c.is_online);
+  document.getElementById('m-sl').innerHTML =
+    `${online?'🟢 Online':'🔴 Offline'} &nbsp;·&nbsp; ${c.ip_address} &nbsp;·&nbsp; ${c.department||'ไม่ระบุ'} &nbsp;·&nbsp; ${c.last_seen}`;
+
+  const rp = c.ram_total_gb>0 ? ((c.ram_used_gb/c.ram_total_gb)*100).toFixed(0) : 0;
+
+  let monDetail = '—';
+  if (c.monitors) {
+    try {
+      const mons = typeof c.monitors==='string' ? JSON.parse(c.monitors) : c.monitors;
+      if (mons&&mons.length) monDetail = mons.map(m=>
+        `🖥 <strong>${esc(m.name)}</strong> &nbsp;<span style="color:var(--text3);font-family:JetBrains Mono,monospace;font-size:11px">SN: ${esc(m.sn)}</span>`
+      ).join('<br>');
+    } catch(e){}
+  }
+
+  const allIpHtml = [
+    c.ip_address ? `🔵 ${esc(c.ip_address)} (Primary)` : '',
+    c.ip_public  ? `🌐 ${esc(c.ip_public)} (Public)` : '',
+    ...(c.ip_all ? c.ip_all.split('|').map(s=>s.trim()).filter(s=>s&&!s.startsWith(c.ip_address)).map(s=>`🔗 ${esc(s)}`) : [])
+  ].filter(Boolean).join('<br>') || '—';
+
+  document.getElementById('m-body').innerHTML = `
+    <div class="ds2">
+      <div class="dst"><span>🌐</span> Network / IP Addresses</div>
+      <div class="dg">
+        <div class="di" style="grid-column:span 2">
+          <label>IP Addresses (ทั้งหมด)</label>
+          <div class="v" style="line-height:1.8">${allIpHtml}</div>
+        </div>
+        ${di('Hostname',c.hostname,true)} ${di('Domain',c.domain)}
+        ${di('Location',c.location)} ${di('Department',c.department)}
+      </div>
+    </div>
+    <div class="ds2">
+      <div class="dst"><span>🔩</span> Hardware / Mainboard</div>
+      <div class="dg">
+        ${di('Manufacturer',c.manufacturer)} ${di('Model',c.model)}
+        ${di('Serial Number',c.serial_number,true)} ${di('Logged User',c.logged_user)}
+      </div>
+    </div>
+    <div class="ds2">
+      <div class="dst"><span>⚡</span> CPU</div>
+      <div class="dg">
+        ${di('CPU Name',c.cpu_name)}
+        ${di('CPU ID',c.cpu_id,true)}
+        ${di('Cores / Threads',c.cpu_cores?c.cpu_cores+'C / '+c.cpu_threads+'T':null)}
+        ${di('Speed',c.cpu_speed_mhz?(c.cpu_speed_mhz/1000).toFixed(2)+' GHz':null)}
+      </div>
+    </div>
+    <div class="ds2">
+      <div class="dst"><span>🧠</span> Memory (RAM)</div>
+      <div class="pb-wrap">
+        <div class="pb"><div class="pf ${rp>=85?'pr':rp>=70?'py':'pg'}" style="width:${rp}%"></div></div>
+        <span class="pl">${c.ram_used_gb||0} / ${c.ram_total_gb||0} GB &nbsp;(${rp}%)</span>
+      </div>
+      <div class="dg3">
+        ${di('Total',c.ram_total_gb?c.ram_total_gb+' GB':null)}
+        ${di('Used',c.ram_used_gb?c.ram_used_gb+' GB':null)}
+        ${di('Type',c.ram_type)}
+        ${di('Slots',c.ram_slots)}
+      </div>
+    </div>
+    <div class="ds2">
+      <div class="dst"><span>💾</span> Storage</div>
+      <div class="dg">
+        ${di('C: Drive Type',c.c_drive_type)}
+        ${di('SSD Count',c.ssd_count !== undefined ? c.ssd_count+' ลูก' : null)}
+        ${di('HDD Count',c.hdd_count !== undefined ? c.hdd_count+' ลูก' : null)}
+        <div class="di" style="grid-column:span 2">
+          <label>Disk Summary</label>
+          <div class="v">${c.disk_summary ? esc(c.disk_summary).replace(/\|/g,'<br>') : '—'}</div>
+        </div>
+      </div>
+    </div>
+    <div class="ds2">
+      <div class="dst"><span>🖥️</span> Monitor(s)</div>
+      <div class="di" style="line-height:1.8">${monDetail}</div>
+    </div>
+    <div class="ds2">
+      <div class="dst"><span>💿</span> Operating System & GPU</div>
+      <div class="dg">
+        ${di('OS',c.os_name)} ${di('GPU',c.gpu_name)}
+        ${di('Last Boot',c.last_boot)} ${di('Last Seen',c.last_seen)}
+      </div>
+    </div>
+  `;
+}
+
+function di(label, val, mono=false) {
+  if (!val || val==='') val='—';
+  return `<div class="di"><label>${label}</label><div class="v ${mono?'mo':''}">${esc(String(val))}</div></div>`;
+}
+function closeModal() { document.getElementById('ov').classList.remove('open'); }
+function closeOv(e) { if(e.target===document.getElementById('ov')) closeModal(); }
+
+function sortBy(key) {
+  currentSort={key, dir:currentSort.key===key?currentSort.dir*-1:1};
+  render(filteredData);
+}
+function setStatus(s,el) {
+  currentStatus=s;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  applyFilter();
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(msg) {
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+function exportCSV() {
+  if (!filteredData.length) return;
+  const keys=['hostname','ip_address','ip_all','ip_public','department','location','manufacturer','model','serial_number','cpu_name','cpu_id','cpu_cores','cpu_threads','ram_total_gb','ram_used_gb','ram_type','c_drive_type','ssd_count','hdd_count','disk_summary','os_name','logged_user','last_seen'];
+  const csv=[keys.join(','),...filteredData.map(r=>keys.map(k=>`"${String(r[k]||'').replace(/"/g,'""')}"`).join(','))].join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='hospital-it-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+function startAutoRefresh() {
+  clearInterval(refreshTimer);
+  refreshTimer=setInterval(fetchData,REFRESH_MS);
+}
+let st;
+document.getElementById('search-input').addEventListener('input',()=>{clearTimeout(st);st=setTimeout(applyFilter,300);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape') closeModal();});
+init();
+</script>
+</body>
+</html>
